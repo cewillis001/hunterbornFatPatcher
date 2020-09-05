@@ -44,8 +44,8 @@ registerPatcher({
             // need to be patched, but need to be referred to later on.  Store values
             // on the locals variable to refer to them later in the patching process.
             helpers.logMessage(settings.fatMultiplier);
-            locals.trollFatFormID = 0x0003AD72; // surely it would be better to not hardcode this
-            // get hunterborn handle
+            locals.trollFatFormID = 0x0003AD72; // surely it would be better to not hard code this
+            // get Hunterborn handle
             var hunterborn = xelib.FileByName('Hunterborn.esp');
             //lol will this work
             var animalFat = xelib.GetRecord(hunterborn, '_DS_Misc_AnimalFat');
@@ -57,7 +57,7 @@ registerPatcher({
         process: [
             {
                 load: {
-                    // get craftable ojects
+                    // get craftable objects
                     signature: 'COBJ',
                     // filter out craftable objects that don't require troll fat
                     filter: function(record) {
