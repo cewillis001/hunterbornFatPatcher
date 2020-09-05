@@ -1,0 +1,12 @@
+{
+  "id": "hunterbornFatPatcher",
+  "name": "Add Animal Fat recipes for every Troll Fat recipe",
+  "author": "Bryarcanium",
+  "version": "1.0",
+  "released": "9/5/2020",
+  "updated": "9/5/2020",
+  "description": "Add Hunterborn Animal Fat recipes for every Troll Fat recipe in mods or the base game.",
+  "requires": ["unifiedPatchingFramework"],
+  "moduleLoader": "UPF",
+  "canHotLoad": true
+}
