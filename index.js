@@ -30,7 +30,7 @@ registerPatcher({
         defaultSettings: {
             exampleSetting: 'hello world',
             fatMultiplier: 3,
-            patchFileName: 'examplePatch.esp'
+            patchFileName: 'hunterbornFatPatch.esp'
         }
     },
     // optional array of required filenames.  can omit if empty.
@@ -48,7 +48,7 @@ registerPatcher({
             // get Hunterborn handle
             var hunterborn = xelib.FileByName('Hunterborn.esp');
             //lol will this work
-            var animalFat = xelib.GetRecord(hunterborn, '_DS_Misc_AnimalFat');
+            var animalFat = xelib.GetRecord(hunterborn, 0x0AB90C);
             //'Hunterborn.esp\\_DS_Misc_AnimalFat'
             locals.animalFatFormID = xelib.GetFormID(animalFat);
         },
@@ -61,6 +61,11 @@ registerPatcher({
                     signature: 'COBJ',
                     // filter out craftable objects that don't require troll fat
                     filter: function(record) {
+                        // check it has items at all
+                        if (!xelib.HasElement(record, 'Items')) {
+                            return false;
+                        }
+                        // if so, is fatty?
                         var isFattyRecipe = xelib.HasItem(record, locals.trollFatFormID);
                         if (isFattyRecipe) {
                             helpers.logMessage(`I think ${xelib.GetFormID(record)} has troll fat as an ingredient`);
@@ -73,7 +78,7 @@ registerPatcher({
                     var animalFatRecipe = trollFatRecipe;
                     // rename
                     var oldEDID = xelib.GetElement(trollFatRecipe, 'EDID');
-                    xelib.SetElementValue(animalFatRecipe, 'EDID', "BRY_FAT_PATCH_".concat(oldEDID);
+                    xelib.SetElementValue(animalFatRecipe, 'EDID', "BRY_FAT_PATCH_".concat(oldEDID));
                     // find troll fat
                     // I believe this is a handle, so changes I make here should automatically save to the record?
                     var fatItem = xelib.getItem(animalFatRecipe, locals.trollFatFormID);
