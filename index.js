@@ -21,14 +21,12 @@ registerPatcher({
             // function defined on the scope, gets called when the user
             // clicks the Show Message button via ng-click="showMessage()"
             $scope.showMessage = function() {
-                alert(patcherSettings.fatMultiplier);
             };
         },
         // default settings for your patcher.  use the patchFileName setting if
         // you want to use a unique patch file for your patcher instead of the
         // default zPatch.esp plugin file.  (using zPatch.esp is recommended)
         defaultSettings: {
-            exampleSetting: 'hello world',
             fatMultiplier: 3,
             patchFileName: 'hunterbornFatPatch.esp'
         }
@@ -66,29 +64,29 @@ registerPatcher({
                             return false;
                         }
                         // if so, is fatty?
-                        var isFattyRecipe = xelib.HasItem(record, locals.trollFatFormID);
+                        var isFattyRecipe = xelib.HasItem(record, 'TrollFat');
                         if (isFattyRecipe) {
-                            helpers.logMessage(`I think ${xelib.GetFormID(record)} has troll fat as an ingredient`);
+                            helpers.logMessage(`I think ${xelib.GetHexFormID(record)} has troll fat as an ingredient`);
                         }
-                        return (!isFattyRecipe);
+                        return isFattyRecipe;
                     }
                 },
                 patch: function(trollFatRecipe) {
                     // copy recipe
-                    var animalFatRecipe = trollFatRecipe;
+                    let animalFatRecipe = xelib.CopyElement(trollFatRecipe, patchFile, true);
                     // rename
                     var oldEDID = xelib.GetElement(trollFatRecipe, 'EDID');
-                    xelib.SetElementValue(animalFatRecipe, 'EDID', "BRY_FAT_PATCH_".concat(oldEDID));
-                    // find troll fat
-                    // I believe this is a handle, so changes I make here should automatically save to the record?
-                    var fatItem = xelib.getItem(animalFatRecipe, locals.trollFatFormID);
-                    // here's hoping the item handle refers both to the item and the count
-                    xelib.SetValue(fatItem, 'CNTO\\Item', locals.animalFatFormID);
+                    xelib.SetValue(animalFatRecipe, 'EDID', "BRY_FAT_PATCH_".concat(oldEDID));
+                    // get troll fat info
+                    var fatItem = xelib.GetItem(animalFatRecipe, 'TrollFat');
                     var oldCount = xelib.GetUIntValue(fatItem, 'CNTO\\Count');
-                    xelib.SetUIntValue(ingredient, 'CNTO\\Count', oldCount * settings.fatMultiplier);
-                    
-                    // now add to the patch
-                    xelib.AddElement(this.patchFile, animalFatRecipe);
+                    var newCount = oldCount * settings.fatMultiplier;
+
+                    // add animal fat
+                    xelib.AddItem(animalFatRecipe, '_DS_Misc_AnimalFat', newCount.toString());
+
+                    // remove troll fat
+                    xelib.RemoveItem(animalFatRecipe, locals.trollFatFormID.toString());
                 }
             }
         ],
