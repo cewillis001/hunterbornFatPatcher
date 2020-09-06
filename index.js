@@ -29,14 +29,14 @@ registerPatcher({
         defaultSettings: {
             fatMultiplier: 3,
             patchFileName: 'hunterbornFatPatch.esp',
-            ignoredFiles: ['Hunterborn.esp']
+            ignoredFiles: []
         }
     },
-    // TODO: verify we can both require hunterborn (as an input) and avoid patching it
     requiredFiles: ['Hunterborn.esp'],
     execute: (patchFile, helpers, settings, locals) => ({
         initialize: function() {
             locals.date = new Date();
+            locals.hunterbornHandle = xelib.FileByName('Hunterborn.esp');
             helpers.logMessage(`Multiplying troll fat by: ${settings.fatMultiplier}`);
         },
         // required: array of process blocks. each process block should have both
@@ -46,10 +46,11 @@ registerPatcher({
                 load: {
                     // get craftable objects
                     signature: 'COBJ',
-                    // filter out craftable objects that don't require troll fat
                     filter: function(record) {
-                        // assume hunterborn mods know about animal fat already
-
+                        // assume Hunterborn knows about animal fat already
+                        if (xelib.ElementEquals(xelib.GetElementFile(record), locals.hunterbornHandle)) {
+                            return false;
+                        }
                         // check it has items at all - some recipes don't
                         if (!xelib.HasElement(record, 'Items')) {
                             return false;
@@ -78,8 +79,7 @@ registerPatcher({
                     xelib.SetValue(animalFatRecipe, 'EDID', "BRY_FAT_PATCH_".concat(oldEDID));
                     // get troll fat info
                     var fatItem = xelib.GetItem(animalFatRecipe, 'TrollFat');
-                    var oldCount = xelib.GetUIntValue(fatItem, 'CNTO\\Count');
-                    var newCount = oldCount * settings.fatMultiplier;
+                    var newCount = xelib.GetUIntValue(fatItem, 'CNTO\\Count') * settings.fatMultiplier;
 
                     // add animal fat
                     xelib.AddItem(animalFatRecipe, '_DS_Misc_AnimalFat', newCount.toString());
