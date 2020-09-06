@@ -36,7 +36,6 @@ registerPatcher({
     execute: (patchFile, helpers, settings, locals) => ({
         initialize: function() {
             locals.date = new Date();
-            locals.hunterbornHandle = xelib.FileByName('Hunterborn.esp');
             helpers.logMessage(`Multiplying troll fat by: ${settings.fatMultiplier}`);
         },
         // required: array of process blocks. each process block should have both
@@ -48,7 +47,8 @@ registerPatcher({
                     signature: 'COBJ',
                     filter: function(record) {
                         // assume Hunterborn knows about animal fat already
-                        if (xelib.ElementEquals(xelib.GetElementFile(record), locals.hunterbornHandle)) {
+                        var hunterbornHandle = xelib.FileByName('Hunterborn.esp');
+                        if (xelib.ElementEquals(xelib.GetElementFile(record), hunterbornHandle)) {
                             return false;
                         }
                         // check it has items at all - some recipes don't
