@@ -28,27 +28,16 @@ registerPatcher({
         // default zPatch.esp plugin file.  (using zPatch.esp is recommended)
         defaultSettings: {
             fatMultiplier: 3,
-            patchFileName: 'hunterbornFatPatch.esp'
+            patchFileName: 'hunterbornFatPatch.esp',
+            ignoredFiles: ['Hunterborn.esp']
         }
     },
-    // optional array of required filenames.  can omit if empty.
+    // TODO: verify we can both require hunterborn (as an input) and avoid patching it
     requiredFiles: ['Hunterborn.esp'],
     execute: (patchFile, helpers, settings, locals) => ({
         initialize: function() {
             locals.date = new Date();
-            // Optional function, omit if empty.
-            // Perform anything that needs to be done once at the beginning of the
-            // patcher's execution here.  This can be used to cache records which don't
-            // need to be patched, but need to be referred to later on.  Store values
-            // on the locals variable to refer to them later in the patching process.
-            helpers.logMessage(settings.fatMultiplier);
-            locals.trollFatFormID = 0x0003AD72; // surely it would be better to not hard code this
-            // get Hunterborn handle
-            var hunterborn = xelib.FileByName('Hunterborn.esp');
-            //lol will this work
-            var animalFat = xelib.GetRecord(hunterborn, 0x0AB90C);
-            //'Hunterborn.esp\\_DS_Misc_AnimalFat'
-            locals.animalFatFormID = xelib.GetFormID(animalFat);
+            helpers.logMessage(`Multiplying troll fat by: ${settings.fatMultiplier}`);
         },
         // required: array of process blocks. each process block should have both
         // a load and a patch function.
@@ -59,23 +48,33 @@ registerPatcher({
                     signature: 'COBJ',
                     // filter out craftable objects that don't require troll fat
                     filter: function(record) {
-                        // check it has items at all
+                        // assume hunterborn mods know about animal fat already
+
+                        // check it has items at all - some recipes don't
                         if (!xelib.HasElement(record, 'Items')) {
                             return false;
                         }
-                        // if so, is fatty?
-                        var isFattyRecipe = xelib.HasItem(record, 'TrollFat');
-                        if (isFattyRecipe) {
-                            helpers.logMessage(`I think ${xelib.GetHexFormID(record)} has troll fat as an ingredient`);
+                        // obviously we only care about recipes with troll fat ingredients
+                        if (!xelib.HasItem(record, 'TrollFat')) {
+                            return false;
                         }
-                        return isFattyRecipe;
+                        // is troll in the recipe name? probably wouldn't make sense to substitute
+                        if (xelib.EditorID(record).toLowerCase().includes('troll')) {
+                            return false;
+                        }
+                        // one last check - is one of the other ingredients a troll skull?
+                        // probably wouldn't make sense to substitute
+                        if (xelib.HasItem(record, 'BoneTrollSkull01')) {
+                            return false;
+                        }
+                        return true;
                     }
                 },
                 patch: function(trollFatRecipe) {
                     // copy recipe
                     let animalFatRecipe = xelib.CopyElement(trollFatRecipe, patchFile, true);
                     // rename
-                    var oldEDID = xelib.GetElement(trollFatRecipe, 'EDID');
+                    var oldEDID = xelib.EditorID(trollFatRecipe);
                     xelib.SetValue(animalFatRecipe, 'EDID', "BRY_FAT_PATCH_".concat(oldEDID));
                     // get troll fat info
                     var fatItem = xelib.GetItem(animalFatRecipe, 'TrollFat');
@@ -86,7 +85,7 @@ registerPatcher({
                     xelib.AddItem(animalFatRecipe, '_DS_Misc_AnimalFat', newCount.toString());
 
                     // remove troll fat
-                    xelib.RemoveItem(animalFatRecipe, locals.trollFatFormID.toString());
+                    xelib.RemoveItem(animalFatRecipe, 'TrollFat');
                 }
             }
         ],
